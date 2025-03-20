@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract RandomWinner {
+
+    // Array to store participants
+    address[] public participants;
+
+    // Event to emit when a winner is chosen
+    event WinnerChosen(address winner);
+
+    // Function to contribute ETH and join the lottery
+    function contribute() external payable {
+        // Ensure the sender is sending some ETH to participate
+        require(msg.value > 0, "You must send ETH to participate!");
+        
+        // Add the sender to the participants array
+        participants.push(msg.sender);
+    }
+
+    // Function to pick a random winner and send the prize
+    function pickWinner() external {
+        // Ensure there are participants
+        require(participants.length > 0, "No participants to choose from.");
+        
+        // Generate a pseudo-random index based on the current block's properties
+        uint randomIndex = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty, participants))) % participants.length;
+
+        // Select the winner using the generated index
+        address winner = participants[randomIndex];
+
+        // Transfer the contract's balance to the winner
+        payable(winner).transfer(address(this).balance);
+
+        // Emit an event for the winner
+        emit WinnerChosen(winner);
+
+        // Reset participants for the next round
+        delete participants;
+    }
+
+    // Function to get the list of participants
+    function getParticipants() external view returns (address[] memory) {
+        return participants;
+    }
+
+    // Function to check the contract balance
+    function getContractBalance() external view returns (uint) {
+        return address(this).balance;
+    }
+}
